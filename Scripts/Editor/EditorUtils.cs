@@ -47,7 +47,5 @@ namespace HVUnity.Core.Editor
 			// return default
 			return "Assets";
 		}
-
-		
 	}
 }

@@ -10,6 +10,7 @@
  *  Licensed under the MIT License. 
  *  See LICENSE file in the project root for full license information.
  */
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -56,6 +57,7 @@ namespace HVUnity.Core.Editor
 		private static Texture2D scriptableSettingsIcon;
 
 		#endregion
+
 		/*
 		 * =========================================================================
 		 *  Accessors
@@ -79,6 +81,26 @@ namespace HVUnity.Core.Editor
 		/// <summary>
 		/// Icon for Scriptable settings objects
 		/// </summary>
+		public static Texture2D CSharpBehaviourIcon
+		{
+			get
+			{
+				if( csharpBehaviourIcon == null )
+				{
+					csharpBehaviourIcon = (Texture2D)AssetDatabase.LoadAssetAtPath(
+							"Assets/TheWorkshop/HVUnityCore/Icons/Editor/CSharp_Behaviour.png",
+							typeof(Texture2D)
+						);
+
+					// TODO package path
+				}
+				return csharpBehaviourIcon;
+			}
+		}
+
+		/// <summary>
+		/// Icon for Scriptable settings objects
+		/// </summary>
 		public static Texture2D ScriptableSettingsIcon
 		{
 			get
@@ -96,6 +118,32 @@ namespace HVUnity.Core.Editor
 			}
 		}
 
+		/*
+		 * =========================================================================
+		 *  Function
+		 * =========================================================================
+		 */
 
+		public static void injectIcon(Object obj, Texture2D icon)
+		{
+			if( icon == null )
+				return;
+
+			PropertyInfo info = typeof(SerializedObject).GetProperty(
+					"inspectorMode",
+					BindingFlags.NonPublic | BindingFlags.Instance
+				);
+			SerializedObject serializedObject = new SerializedObject(obj);
+
+			info.SetValue(serializedObject, InspectorMode.Debug, null);
+
+			SerializedProperty iconProperty = serializedObject.FindProperty("m_Icon");
+			iconProperty.objectReferenceValue = icon;
+
+			serializedObject.ApplyModifiedProperties();
+			serializedObject.Update();
+
+			EditorUtility.SetDirty(obj);
+		}
 	}
 }

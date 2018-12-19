@@ -15,6 +15,13 @@ using System.Collections.Generic;
 
 using UnityEngine;
 
+#if UNITY_EDITOR
+
+using System.IO;
+using UnityEditor;
+
+#endif
+
 namespace HVUnity.Core
 {
 	/// <summary>
@@ -23,7 +30,12 @@ namespace HVUnity.Core
 	/// 
 	/// Returns the asset created on editor, null if there is none
 	/// Based on https://www.youtube.com/watch?v=VBA1QCoEAX4
-	/// Added preload in player feature and thread lock
+	/// 
+	/// Extended with:
+	/// - preload in player feature 
+	/// - thread lock 
+	/// - available check 
+	/// - instance creation 
 	/// </summary>
 	/// <typeparam name="T">Type of the singleton</typeparam>
 	public abstract class SingletonScriptableObject<T> : ScriptableObject 
@@ -68,10 +80,10 @@ namespace HVUnity.Core
 					if( !instance )
 					{
 #if UNITY_EDITOR
-						string guid = UnityEditor.AssetDatabase.FindAssets("t:" + typeof(T).Name).FirstOrDefault();
+						string guid = AssetDatabase.FindAssets("t:" + typeof(T).Name).FirstOrDefault();
 
-						instance = UnityEditor.AssetDatabase.LoadAssetAtPath<T>(
-								UnityEditor.AssetDatabase.GUIDToAssetPath(guid)
+						instance = AssetDatabase.LoadAssetAtPath<T>(
+								AssetDatabase.GUIDToAssetPath(guid)
 							);
 #else
 						instance = Resources.FindObjectsOfTypeAll<T>().FirstOrDefault();
@@ -79,6 +91,28 @@ namespace HVUnity.Core
 					}
 				}
 				return instance;
+			}
+		}
+			
+		/// <summary>
+		/// Check if the singleton is available as asset.
+		/// 
+		/// Can be used for validation menu items, to prevent multiple singleton creations
+		/// </summary>
+		/// <returns></returns>
+		public static bool IsAvailable
+		{
+			get
+			{ 
+#if UNITY_EDITOR
+				if( AssetDatabase.FindAssets("t:" + typeof(T).Name).FirstOrDefault() != null )
+					return true;
+#else
+				if( Resources.FindObjectsOfTypeAll<T>().FirstOrDefault() != null )
+					return true;
+#endif
+
+				return false;
 			}
 		}
 
@@ -93,11 +127,11 @@ namespace HVUnity.Core
 #if UNITY_EDITOR
 			if( preloadInPlayer )
 			{
-				List<Object> preloadedAssets = UnityEditor.PlayerSettings.GetPreloadedAssets().ToList();
+				List<Object> preloadedAssets = PlayerSettings.GetPreloadedAssets().ToList();
 				if( !preloadedAssets.Contains(this) )
 				{
 					preloadedAssets.Add(this);
-					UnityEditor.PlayerSettings.SetPreloadedAssets(preloadedAssets.ToArray());
+					PlayerSettings.SetPreloadedAssets(preloadedAssets.ToArray());
 				}
 			}
 #endif
@@ -108,15 +142,62 @@ namespace HVUnity.Core
 #if UNITY_EDITOR
 			if( preloadInPlayer )
 			{
-				List<Object> preloadedAssets = UnityEditor.PlayerSettings.GetPreloadedAssets().ToList();
+				List<Object> preloadedAssets = PlayerSettings.GetPreloadedAssets().ToList();
 				if( preloadedAssets.Contains(this) )
 				{
 					preloadedAssets.Remove(this);
-					UnityEditor.PlayerSettings.SetPreloadedAssets(preloadedAssets.ToArray());
+					PlayerSettings.SetPreloadedAssets(preloadedAssets.ToArray());
 				}
 			}
 #endif
 			instance = null;
 		}
+		
+#if UNITY_EDITOR
+
+		/// <summary>
+		/// Creates the instance and saves it as asset.
+		/// </summary>
+		/// <returns></returns>
+		public static T createSingletonInstance()
+		{
+			if( instance != null || IsAvailable )
+				return default(T);
+			
+			T asset = CreateInstance<T>();
+
+			string path = getAssetSelectionPath();
+
+			string assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "/" + typeof(T).Name + ".asset");
+
+			AssetDatabase.CreateAsset(asset, assetPathAndName);
+			AssetDatabase.SaveAssets();
+			EditorUtility.FocusProjectWindow();
+			Selection.activeObject = asset;
+
+			return asset;
+		}
+
+		private static string getAssetSelectionPath()
+		{
+			Object obj = Selection.activeObject;
+
+			if( obj == null )
+				return "Assets";
+
+			string path = AssetDatabase.GetAssetPath(obj);
+
+			if( !string.IsNullOrEmpty(path) )
+			{
+				if( File.Exists(path) )
+					return Path.GetDirectoryName(path);
+				else
+					return path;
+			}
+			// return default
+			return "Assets";
+		}
+#endif
+
 	}
 }
