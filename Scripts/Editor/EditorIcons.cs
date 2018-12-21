@@ -120,10 +120,17 @@ namespace HVUnity.Core.Editor
 
 		/*
 		 * =========================================================================
-		 *  Function
+		 *  Functions
 		 * =========================================================================
 		 */
-
+		
+		/// <summary>
+		/// Replaces the default icon of an asset with the new one.
+		/// 
+		/// Does only work on objects that can change the icon inside the editor.
+		/// </summary>
+		/// <param name="obj"></param>
+		/// <param name="icon"></param>
 		public static void injectIcon(Object obj, Texture2D icon)
 		{
 			if( icon == null )
