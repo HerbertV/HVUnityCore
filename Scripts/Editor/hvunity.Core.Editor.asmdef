@@ -1,0 +1,12 @@
+{
+    "name": "hvunity.Core.Editor",
+    "references": [
+        "hvunity.Core.Runtime"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false
+}
