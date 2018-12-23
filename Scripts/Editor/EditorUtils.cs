@@ -21,6 +21,7 @@ namespace HVUnity.Core.Editor
 	/// Class EditorUtils
 	/// 
 	/// Collection of useful editor utilities.
+	/// Some functions only reference to <see cref="RuntimeUtils"/>
 	/// </summary>
 	public static class EditorUtils
 	{
@@ -28,24 +29,10 @@ namespace HVUnity.Core.Editor
 		/// returns the current path of a selected project folder or "Assets"
 		/// </summary>
 		/// <returns></returns>
-		public static string getSelectedProjectWindowPath()
+		public static string selectedProjectWindowPath()
 		{
-			Object obj = Selection.activeObject;
-
-			if( obj == null )
-				return "Assets";
-
-			string path = AssetDatabase.GetAssetPath(obj);
-			
-			if( !string.IsNullOrEmpty(path) )
-			{
-				if( File.Exists(path) )
-					return Path.GetDirectoryName(path);
-				else
-					return path;
-			}
-			// return default
-			return "Assets";
+			return RuntimeUtils.inEditorSelectedProjectWindowPath();
 		}
+
 	}
 }

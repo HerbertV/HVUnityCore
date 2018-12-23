@@ -153,7 +153,7 @@ namespace HVUnity.Core
 			instance = null;
 		}
 		
-#if UNITY_EDITOR
+
 
 		/// <summary>
 		/// Creates the instance and saves it as asset.
@@ -161,12 +161,13 @@ namespace HVUnity.Core
 		/// <returns></returns>
 		public static T createSingletonInstance()
 		{
+#if UNITY_EDITOR
 			if( instance != null || IsAvailable )
 				return default(T);
 			
 			T asset = CreateInstance<T>();
 
-			string path = getAssetSelectionPath();
+			string path = RuntimeUtils.inEditorSelectedProjectWindowPath();
 
 			string assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "/" + typeof(T).Name + ".asset");
 
@@ -176,28 +177,11 @@ namespace HVUnity.Core
 			Selection.activeObject = asset;
 
 			return asset;
-		}
-
-		private static string getAssetSelectionPath()
-		{
-			Object obj = Selection.activeObject;
-
-			if( obj == null )
-				return "Assets";
-
-			string path = AssetDatabase.GetAssetPath(obj);
-
-			if( !string.IsNullOrEmpty(path) )
-			{
-				if( File.Exists(path) )
-					return Path.GetDirectoryName(path);
-				else
-					return path;
-			}
-			// return default
-			return "Assets";
-		}
+#else 
+			return default(T);
 #endif
+		}
+
 
 	}
 }
